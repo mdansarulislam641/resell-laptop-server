@@ -65,6 +65,8 @@ app.post('/users',async(req,res)=>{
 })
 
 
+
+
 // jwt token
 app.get('/jwt',async(req,res)=>{
     const email = req.query.email ;
@@ -107,6 +109,45 @@ app.get('/users/:buyer',verifyJWT,async(req,res)=>{
     catch(error){
         console.log(error.message)
     }
+})
+
+// user verify under the admin  in productCollection
+app.put('/users/:email',verifyJWT,async(req,res)=>{
+  try{
+    const email = req.params.email ;
+    const filter = {userEmail:email};
+    const options = {upsert : true};
+    const updatedDoc = {
+        $set:{
+            verified : true
+        }
+    }
+    const result = await productsCollection.updateMany(filter,updatedDoc,options)
+    res.send(result);
+  }
+  catch(e){
+    console.log(e.message)
+  }
+})
+
+// user verify by admin in userCollection
+app.put('/users-verify/:id',async(req,res)=>{
+    try{
+      const id = req.params.id ;
+      const filter = {_id:ObjectId(id)};
+      const options = {upsert : true};
+      const updatedDoc = {
+          $set:{
+              verified : true
+          }
+      }
+
+    const result = await usersCollection.updateOne(filter,updatedDoc,options)
+    res.send(result);
+  }
+  catch(e){
+    console.log(e.message)
+  }
 })
 
 // delete user 
@@ -153,6 +194,51 @@ app.get('/categories/:id',async(req,res)=>{
 })
 
 
+// check isAdmin 
+app.get('/dashboard/admin/:email',async(req,res)=>{
+try{
+  const email = req.params.email ;
+  const query = {email : email};
+  const user = await usersCollection.findOne(query)
+ 
+   res.send({isAdmin:user})
+}
+catch(e){
+  console.log(e.message)
+}
+
+})
+
+// check Buyer
+app.get('/dashboard/buyer/:email',async(req,res)=>{
+try{
+  const email = req.params.email ;
+  const query = {email : email};
+  const user = await usersCollection.findOne(query)
+ 
+   res.send({isBuyer:user})
+}
+catch(e){
+  console.log(e.message)
+}
+
+})
+// check Seller
+app.get('/dashboard/seller/:email',async(req,res)=>{
+try{
+  const email = req.params.email ;
+  const query = {email : email};
+  const user = await usersCollection.findOne(query)
+ 
+   res.send({isSeller:user})
+}
+catch(e){
+  console.log(e.message)
+}
+
+})
+
+
 // add product seller product add for api
 app.post('/products',async(req, res)=>{
     try{
@@ -168,6 +254,21 @@ app.post('/products',async(req, res)=>{
     }
 
 })
+
+// delete product can for wise seller
+app.delete('/products/:id',async(req,res)=>{
+  try{
+    const id = req.params.id ;
+    const query = {_id:ObjectId(id)};
+    const result =await productsCollection.deleteOne(query);
+    res.send(result)
+  }
+  catch(e){
+    console.log(e.message)
+  }
+})
+
+
 
 // get product by category wise
 app.get('/products/:categoryName',async(req,res)=>{
@@ -256,6 +357,20 @@ app.get('/advertise-product/:id',async(req,res)=>{
     console.log(e.message);
   }
 })
+
+// get user orders booking
+app.get('/buyer-products/:email',async(req,res)=>{
+  try{
+    const email = req.params.email ;
+    const query = {email : email};
+    const result = await bookingCollection.find(query).toArray();
+    res.send(result)
+  }
+  catch(e){
+    console.log(e.message)
+  }
+})
+
 
 // booking post product if user booking product stored db
 app.post('/bookings',async(req,res)=>{
