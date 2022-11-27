@@ -37,6 +37,7 @@ const categoryCollection = client.db('laptop-resell-market').collection('categor
 const productsCollection = client.db('laptop-resell-market').collection('products')
 const usersCollection = client.db('laptop-resell-market').collection('users')
 const bookingCollection = client.db('laptop-resell-market').collection('bookings');
+const wishListCollection = client.db('laptop-resell-market').collection('wishlist');
 
 
 
@@ -383,6 +384,22 @@ app.post('/bookings',async(req,res)=>{
     console.log(error.message)
 }
 })
+
+
+// add item wishList from user/ buyer
+app.post('/wishlist',verifyJWT,async(req,res)=>{
+  try{
+    const wishListInfo = req.body ;
+  const result = await wishListCollection.insertOne(wishListInfo)
+  res.send(result)
+  }
+  catch(e){
+    console.log(e.message)
+  }
+})
+
+
+// get wishlist product
 
 
 
