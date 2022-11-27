@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const app = express();
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 
 // midleware
 app.use(cors());
@@ -38,6 +39,38 @@ const productsCollection = client.db('laptop-resell-market').collection('product
 const usersCollection = client.db('laptop-resell-market').collection('users')
 const bookingCollection = client.db('laptop-resell-market').collection('bookings');
 const wishListCollection = client.db('laptop-resell-market').collection('wishlist');
+
+// admin verify
+const VerifyAdmin = async(req,res,next)=>{
+  const decodedEmail = req.decoded.email ;
+  const emailQuery = {email:decodedEmail};
+  const user = await usersCollection.findOne(emailQuery);
+  if(user?.isAdmin !== 'admin'){
+     return res.status(401).send("forbidden user");
+  }
+  next()
+}
+// buyer verify
+const VerifyBuyer = async(req,res,next)=>{
+  const decodedEmail = req.decoded.email ;
+  const emailQuery = {email:decodedEmail};
+  const user = await usersCollection.findOne(emailQuery);
+  if(user?.role !== 'buyer'){
+     return res.status(401).send("forbidden user");
+  }
+  next()
+}
+// buyer verify
+const VerifySeller = async(req,res,next)=>{
+  const decodedEmail = req.decoded.email ;
+  const emailQuery = {email:decodedEmail};
+  const user = await usersCollection.findOne(emailQuery);
+  if(user?.role !== 'seller'){
+     return res.status(401).send("forbidden user");
+  }
+  next()
+}
+
 
 
 
@@ -86,7 +119,7 @@ app.get('/jwt',async(req,res)=>{
 
 
 // get seller user
-app.get('/users/:seller',verifyJWT,async(req,res)=>{
+app.get('/users/:seller',verifyJWT,VerifyAdmin,async(req,res)=>{
   try{
     const seller = req.params.seller ;
     const  query = {role : seller};
@@ -99,7 +132,7 @@ app.get('/users/:seller',verifyJWT,async(req,res)=>{
     }
 })
 // get buyers user
-app.get('/users/:buyer',verifyJWT,async(req,res)=>{
+app.get('/users/:buyer',verifyJWT,VerifyAdmin,async(req,res)=>{
   try{
     const buyer = req.params.buyer ;
     const  query = {role : buyer};
@@ -241,7 +274,7 @@ catch(e){
 
 
 // add product seller product add for api
-app.post('/products',async(req, res)=>{
+app.post('/products',verifyJWT,VerifySeller,async(req, res)=>{
     try{
         const productInfo = req.body;
         const result = await productsCollection.insertOne(productInfo);
@@ -286,7 +319,7 @@ catch(error){
 })
 
 // product get by user email for myProducts
-app.get('/products',async(req,res)=>{
+app.get('/products',verifyJWT,VerifySeller,async(req,res)=>{
 try{
     const email = req.query.email ;
     const query = {userEmail : email};
@@ -317,6 +350,14 @@ app.put('/products/:id',async(req,res)=>{
    }
 })
 
+
+// payment product 
+app.get('/dashboard/payment/:id',async(req,res)=>{
+  const id = req.params.id ;
+  const query = { _id: ObjectId(id)};
+  const result = await productsCollection.findOne(query);
+  res.send(result)
+})
 
 // advertise product on home page 
 app.put('/product-advertise/:id',async(req,res)=>{
@@ -360,7 +401,7 @@ app.get('/advertise-product/:id',async(req,res)=>{
 })
 
 // get user orders booking
-app.get('/buyer-products/:email',async(req,res)=>{
+app.get('/buyer-products/:email',verifyJWT,VerifyBuyer,async(req,res)=>{
   try{
     const email = req.params.email ;
     const query = {email : email};
@@ -386,6 +427,28 @@ app.post('/bookings',async(req,res)=>{
 })
 
 
+// payment api make
+app.post('/create-payment-intent',async(req,res)=>{
+try{
+  const price = req.body.sellPrice ;
+  const amount = parseFloat(price * 100);
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount:amount,
+    currency:'usd',
+    "payment_method_types":[
+      'card'
+    ]
+  });
+  res.send({
+    clientSecret:paymentIntent.client_secret
+  });
+
+}
+catch(e){
+  console.log(e.message)
+}
+})
+
 // add item wishList from user/ buyer
 app.post('/wishlist',verifyJWT,async(req,res)=>{
   try{
@@ -400,7 +463,7 @@ app.post('/wishlist',verifyJWT,async(req,res)=>{
 
 
 // get wishlist product
-app.get('/wishlist',async(req, res)=>{
+app.get('/wishlist',verifyJWT,VerifyBuyer,async(req, res)=>{
   const query = {};
   const result = await wishListCollection.find(query) .toArray();
 
