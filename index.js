@@ -400,6 +400,12 @@ app.post('/wishlist',verifyJWT,async(req,res)=>{
 
 
 // get wishlist product
+app.get('/wishlist',async(req, res)=>{
+  const query = {};
+  const result = await wishListCollection.find(query) .toArray();
+
+  res.send(result)
+})
 
 
 
