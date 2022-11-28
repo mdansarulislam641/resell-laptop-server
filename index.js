@@ -118,6 +118,55 @@ app.get('/jwt',async(req,res)=>{
 })
 
 
+// get specific product by id in booking collection
+app.put('/booking-product/:id', async(req,res)=>{
+ try{
+  const id = req.params.id ;
+  const filter = { product_id : (id)}
+  const options = {upsert : true}
+  const updatedDoc = {
+    $set:{
+      payBill : true
+    }
+  }
+  const result = await bookingCollection.updateOne(filter,updatedDoc,options);
+  res.send(result)
+ }
+ catch(e){
+  console.log(e.message)
+ }
+})
+
+
+// get specific product by id in wishlist collection
+app.get('/wishlist-product/:id', async(req,res)=>{
+ try{
+  const id = req.params.id ;
+  const filter = { product_id : (id)}
+  const options = {upsert : true}
+  const updatedDoc = {
+    $set:{
+      payBill : true
+    }
+  }
+  const result = await wishListCollection.updateOne(filter,updatedDoc,options);
+  res.send(result)
+ }
+ catch(e){
+  console.log(e.message)
+ }
+})
+
+
+// product find by specific id for pay bill
+app.delete('/product-get-payment/:id', async(req, res)=>{
+  const id = req.params.id;
+  const query = {_id : ObjectId(id)}
+  const result = await productsCollection.findOne(query)
+  res.send(result)
+})
+
+
 // get seller user
 app.get('/users/:seller',verifyJWT,VerifyAdmin,async(req,res)=>{
   try{
@@ -185,7 +234,7 @@ app.put('/users-verify/:id',async(req,res)=>{
 })
 
 // delete user 
-app.delete('/users/:id',verifyJWT,async(req,res)=>{
+app.delete('/users/:id',verifyJWT,VerifyAdmin,async(req,res)=>{
    try{
     const id = req.params.id ;
     const query = {_id:ObjectId(id)}
