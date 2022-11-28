@@ -119,17 +119,18 @@ app.get('/jwt',async(req,res)=>{
 
 
 // get specific product by id in booking collection
-app.put('/booking-product/:id', async(req,res)=>{
+app.get('/booking-product/:id', async(req,res)=>{
  try{
   const id = req.params.id ;
-  const filter = { product_id : (id)}
-  const options = {upsert : true}
-  const updatedDoc = {
-    $set:{
-      payBill : true
-    }
-  }
-  const result = await bookingCollection.updateOne(filter,updatedDoc,options);
+  const filter = { product_id : id}
+  // const options = {upsert : true}
+  // const updatedDoc = {
+  //   $set:{
+  //     payBill : true
+  //   }
+  // }
+  // const result = await bookingCollection.updateOne(filter,updatedDoc,options);
+  const result = await bookingCollection.findOne(filter)
   res.send(result)
  }
  catch(e){
@@ -139,7 +140,7 @@ app.put('/booking-product/:id', async(req,res)=>{
 
 
 // get specific product by id in wishlist collection
-app.get('/wishlist-product/:id', async(req,res)=>{
+app.put('/wishlist-product/:id', async(req,res)=>{
  try{
   const id = req.params.id ;
   const filter = { product_id : (id)}
@@ -159,7 +160,7 @@ app.get('/wishlist-product/:id', async(req,res)=>{
 
 
 // product find by specific id for pay bill
-app.delete('/product-get-payment/:id', async(req, res)=>{
+app.get('/product-get-payment/:id', async(req, res)=>{
   const id = req.params.id;
   const query = {_id : ObjectId(id)}
   const result = await productsCollection.findOne(query)
@@ -404,7 +405,7 @@ app.put('/products/:id',async(req,res)=>{
 app.get('/dashboard/payment/:id',async(req,res)=>{
   const id = req.params.id ;
   const query = { _id: ObjectId(id)};
-  const result = await productsCollection.findOne(query);
+  const result = await bookingCollection.findOne(query);
   res.send(result)
 })
 
@@ -512,8 +513,9 @@ app.post('/wishlist',verifyJWT,async(req,res)=>{
 
 
 // get wishlist product
-app.get('/wishlist',verifyJWT,VerifyBuyer,async(req, res)=>{
-  const query = {};
+app.get('/wishlist/:email',verifyJWT,VerifyBuyer,async(req, res)=>{
+  const email = req.params.email ;
+  const query = {email : email};
   const result = await wishListCollection.find(query) .toArray();
 
   res.send(result)
