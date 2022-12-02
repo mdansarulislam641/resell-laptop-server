@@ -447,7 +447,7 @@ app.get('/advertise-product/:id',async(req,res)=>{
   }
   catch(e){
     console.log(e.message);
-  }
+  } 
 })
 
 // get user orders booking
